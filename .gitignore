@@ -1,16 +1,97 @@
+####################################################
+# UNITY
+####################################################
+
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
+[Mm]emoryCaptures/
+
+# Local cache / user settings
 UserSettings/
 
-# Visual Studio
-.vs/
-*.csproj
-*.sln
+# Plastic SCM (KHÔNG DÙNG CHUNG VỚI GIT)
+.plastic/
 
-# OS
-.DS_Store
+####################################################
+# VISUAL STUDIO / RIDER / VSCODE
+####################################################
+
+.vs/
+.vscode/
+.idea/
+*.sln.iml
+
+# Visual Studio
+*.csproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+####################################################
+# UNITY GENERATED FILES
+####################################################
+
+# Unity crash reports
+sysinfo.txt
+
+# Unity shader / cache
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+
+####################################################
+# OS FILES
+####################################################
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+####################################################
+# BUILDS / EXPORTS
+####################################################
+
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.exe
+*.x86
+*.x86_64
+*.zip
+*.rar
+
+####################################################
+# LOGS
+####################################################
+
+*.log
+
+####################################################
+# TEST / COVERAGE
+####################################################
+
+TestResults/
+coverage/
+
+####################################################
+# IMPORTANT: DO NOT IGNORE THESE
+####################################################
+
+# Unity cần các file này
+!Assets/**
+!Packages/**
+!ProjectSettings/**
+!*.meta
