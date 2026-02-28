@@ -4,75 +4,104 @@ public class PlayerController : MonoBehaviour
 {
     public float walkSpeed = 3f;
     public float runSpeed = 6f;
-    public float jumpHeight = 1.5f;
-    public float gravity = -9.81f; // Lực hút trái đất
-    public float turnSmoothTime = 0.1f; // Độ mượt khi xoay người
+    public float jumpForce = 5f;
 
-    private CharacterController controller;
+    // CÔNG TẮC: Bật lên khi vào nhà, tắt đi khi ra ngoài
+    public bool isFirstPerson = false;
+
+    private Rigidbody rb;
     private Animator anim;
-    private Transform cam;
-
-    private float turnSmoothVelocity;
-    private Vector3 velocity;
+    private Transform cameraTransform;
     private bool isGrounded;
+
+    private Vector3 moveDirection;
+    private float currentSpeed;
+    private bool isJumping;
 
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        rb = GetComponent<Rigidbody>();
         anim = GetComponent<Animator>();
-
-        // Tự động tìm Main Camera trong Scene
-        cam = Camera.main.transform;
+        cameraTransform = Camera.main.transform;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
     {
-        // 1. Kiểm tra xem nhân vật có chạm đất không
-        isGrounded = controller.isGrounded;
-        if (isGrounded && velocity.y < 0)
-        {
-            velocity.y = -2f; // Ép nhân vật bám sát mặt đất
-        }
+        isGrounded = Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, 0.2f);
 
-        // 2. Nhận lệnh AWSD
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
-        // Kiểm tra xem có giữ chuột phải không
         bool isRunning = Input.GetMouseButton(1);
-        float currentSpeed = isRunning ? runSpeed : walkSpeed;
+        currentSpeed = isRunning ? runSpeed : walkSpeed;
 
-        // 3. Xử lý di chuyển
-        if (direction.magnitude >= 0.1f)
+        // --- PHÂN LOẠI GÓC NHÌN Ở ĐÂY ---
+        if (isFirstPerson)
         {
-            // Tính toán góc xoay mặt dựa theo Camera
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            // 1. TRONG NHÀ (FPS): Đi tới/lui, trái/phải dựa theo hướng mặt đang nhìn
+            moveDirection = transform.right * horizontal + transform.forward * vertical;
 
-            // Tiến lên phía trước
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-            controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
+            // THÊM DÒNG NÀY ĐỂ CỨU NHÂN VẬT KHỎI BỊ LỌT ĐẤT
+            moveDirection.y = 0f;
 
-            // Kích hoạt Animation đi hoặc chạy
-            anim.SetFloat("Speed", isRunning ? 1f : 0.5f);
+            moveDirection = moveDirection.normalized;
+
+            if (moveDirection.magnitude >= 0.1f)
+            {
+                anim.SetFloat("Speed", isRunning ? 1f : 0.5f);
+            }
+            else
+            {
+                anim.SetFloat("Speed", 0f);
+            }
         }
         else
         {
-            // Đứng im
-            anim.SetFloat("Speed", 0f);
+            // 2. NGOÀI TRỜI (TPS): Xoay cả người theo hướng Camera rồi mới đi
+            if (direction.magnitude >= 0.1f)
+            {
+                float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + cameraTransform.eulerAngles.y;
+                transform.rotation = Quaternion.Euler(0f, targetAngle, 0f);
+
+                moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+                anim.SetFloat("Speed", isRunning ? 1f : 0.5f);
+            }
+            else
+            {
+                moveDirection = Vector3.zero;
+                anim.SetFloat("Speed", 0f);
+            }
         }
 
-        // 4. Xử lý Nhảy
+        // Nhảy
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            anim.SetTrigger("Jump");
+            isJumping = true;
         }
+    }
 
-        // Áp dụng trọng lực để rớt xuống
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
+    void FixedUpdate()
+    {
+        // Dùng velocity thay vì MovePosition để di chuyển mượt mà và không lọt đất
+        Vector3 targetVelocity = moveDirection * currentSpeed;
+
+        // GIỮ NGUYÊN lực hút trái đất (trục Y) để nhân vật luôn đứng vững trên mặt sàn
+        targetVelocity.y = rb.linearVelocity.y;
+
+        // Áp dụng lực chạy cho nhân vật
+        rb.linearVelocity = targetVelocity;
+
+        // Xử lý nhảy
+        if (isJumping)
+        {
+            // Xóa bỏ lực rơi cũ trước khi nhảy để nhảy luôn chuẩn xác
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            anim.SetTrigger("Jump");
+            isJumping = false;
+        }
     }
 }
