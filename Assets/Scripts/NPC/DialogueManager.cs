@@ -18,10 +18,10 @@ public class DialogueManager : MonoBehaviour
     private bool isTyping = false;
     private Coroutine typingCoroutine;
 
-    // Các biến lưu trữ để trả lại trạng thái cũ
+    // Các biến lưu trữ
     private GameObject gameplayCamera;
     private GameObject currentDialogueCamera;
-    private MonoBehaviour playerController;
+    private GameObject currentPlayer; // Biến mới: Dùng để nhớ và giấu nhân vật
 
     void Start()
     {
@@ -34,7 +34,6 @@ public class DialogueManager : MonoBehaviour
     {
         if (dialoguePanel.activeSelf)
         {
-            // Bấm Space hoặc Click chuột trái để chạy chữ nhanh
             if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
             {
                 if (isTyping)
@@ -57,20 +56,18 @@ public class DialogueManager : MonoBehaviour
         currentSentences = sentences;
         index = 0;
 
-        // Hiện UI
         dialoguePanel.SetActive(true);
         acceptButton.SetActive(false);
 
-        // Đổi góc máy quay phim
+        // Đổi máy quay
         currentDialogueCamera = npcCamera;
         if (gameplayCamera != null) gameplayCamera.SetActive(false);
         if (currentDialogueCamera != null) currentDialogueCamera.SetActive(true);
 
-        // Khóa Kim Đồng đứng im
-        playerController = player.GetComponent<PlayerController>();
-        if (playerController != null) playerController.enabled = false;
+        // MỚI: Tàng hình nhân vật chính thay vì khóa di chuyển
+        currentPlayer = player;
+        if (currentPlayer != null) currentPlayer.SetActive(false);
 
-        // Hiện chuột lên để bấm nút
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
@@ -98,12 +95,10 @@ public class DialogueManager : MonoBehaviour
         }
         else
         {
-            // Đã nói xong -> Hiện nút
             acceptButton.SetActive(true);
         }
     }
 
-    // Hàm gọi khi bấm nút Accept
     public void AcceptQuest()
     {
         dialoguePanel.SetActive(false);
@@ -112,10 +107,9 @@ public class DialogueManager : MonoBehaviour
         if (currentDialogueCamera != null) currentDialogueCamera.SetActive(false);
         if (gameplayCamera != null) gameplayCamera.SetActive(true);
 
-        // Mở khóa cho nhân vật đi tiếp
-        if (playerController != null) playerController.enabled = true;
+        // MỚI: Hiện lại nhân vật chính
+        if (currentPlayer != null) currentPlayer.SetActive(true);
 
-        // Giấu chuột đi
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
